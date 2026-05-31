@@ -26,7 +26,6 @@ const organizationSchema = {
   description:
     "Digital infrastructure company operating across AdTech, media buying, growth systems, affiliate, monetization, AI, and digital products.",
   url: "https://clickabily.com",
-  sameAs: ["https://www.linkedin.com"],
 };
 
 export default function Home() {

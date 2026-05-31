@@ -36,9 +36,9 @@ const buildCards = [
     icon: "◇",
   },
   {
-    title: "Affiliate Platforms",
+    title: "Tracking Solutions",
     description:
-      "Performance ecosystems connecting intent, offers, and publisher-grade distribution.",
+      "IF YOU CAN'T TRACK IT WE WILL FIND THE WAY",
     icon: "◆",
   },
   {
@@ -321,17 +321,6 @@ export default function ClickabilyHome() {
                 @
               </span>
               ron@clickabily.com
-            </a>
-            <a
-              href="https://www.linkedin.com"
-              target="_blank"
-              rel="noreferrer"
-              className="group flex w-fit items-center gap-3 transition-colors hover:text-[#22D3EE]"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#8B5CF6]/40 bg-[#8B5CF6]/10 text-xs font-bold transition-colors group-hover:border-[#22D3EE]/50">
-                in
-              </span>
-              LinkedIn
             </a>
           </div>
         </div>
