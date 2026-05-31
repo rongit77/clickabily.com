@@ -39,7 +39,7 @@ const buildCards = [
   {
     title: "Tracking Solutions",
     description:
-      "IF YOU CAN'T TRACK IT WE WILL FIND THE WAY",
+      "If you can't track it, we will find the way.",
     icon: "◆",
   },
   {
