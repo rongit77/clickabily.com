@@ -47,8 +47,155 @@ const HERO_EDGES: Edge[] = [
   { from: "signal", to: "attention" },
 ];
 
+const HERO_FLOW = [
+  "traffic",
+  "intent",
+  "attention",
+  "core",
+  "data",
+  "revenue",
+  "ai",
+  "core",
+  "signal",
+  "bid",
+  "affiliate",
+  "monetize",
+  "scale",
+  "revenue",
+  "traffic",
+  "bid",
+  "signal",
+  "attention",
+];
+
+const CHAIN_FLOW = ["traffic", "intent", "attention", "data", "revenue"];
+
 function dist(ax: number, ay: number, bx: number, by: number) {
   return Math.hypot(ax - bx, ay - by);
+}
+
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function edgeExists(edges: Edge[], a: string, b: string) {
+  return edges.some(
+    (e) => (e.from === a && e.to === b) || (e.from === b && e.to === a),
+  );
+}
+
+function validateFlowPath(path: string[], edges: Edge[]): string[] {
+  if (path.length < 2) return path;
+  const valid: string[] = [path[0]];
+  for (let i = 1; i < path.length; i++) {
+    const prev = valid[valid.length - 1];
+    const next = path[i];
+    if (edgeExists(edges, prev, next)) {
+      valid.push(next);
+    }
+  }
+  return valid.length > 1 ? valid : path;
+}
+
+function getFlowPath(nodes: Node[], edges: Edge[], customPath?: string[]): string[] {
+  if (customPath?.length) {
+    return validateFlowPath(
+      customPath.filter((id) => nodes.some((n) => n.id === id)),
+      edges,
+    );
+  }
+
+  const ids = new Set(nodes.map((n) => n.id));
+  const isChain = nodes.every((n) => Math.abs(n.y - nodes[0].y) < 0.08);
+  if (isChain) {
+    return [...nodes].sort((a, b) => a.x - b.x).map((n) => n.id);
+  }
+
+  const hub = nodes.find(
+    (n) =>
+      n.type === "hub" &&
+      nodes.filter((x) => x.type === "hub").length === 1 &&
+      Math.abs(n.x - 0.5) < 0.15 &&
+      Math.abs(n.y - 0.5) < 0.15,
+  );
+
+  if (hub && edges.every((e) => e.from === hub.id || e.to === hub.id)) {
+    const spokes = nodes
+      .filter((n) => n.id !== hub.id)
+      .sort(
+        (a, b) =>
+          Math.atan2(a.y - hub.y, a.x - hub.x) -
+          Math.atan2(b.y - hub.y, b.x - hub.x),
+      );
+    return spokes.flatMap((s) => [hub.id, s.id]);
+  }
+
+  if (nodes.length === HERO_NODES.length) {
+    return validateFlowPath(
+      HERO_FLOW.filter((id) => ids.has(id)),
+      edges,
+    );
+  }
+
+  // Fallback: greedy walk along edges
+  const adjacency = new Map<string, string[]>();
+  edges.forEach(({ from, to }) => {
+    if (!ids.has(from) || !ids.has(to)) return;
+    adjacency.set(from, [...(adjacency.get(from) ?? []), to]);
+    adjacency.set(to, [...(adjacency.get(to) ?? []), from]);
+  });
+
+  const start = nodes.find((n) => n.type === "hub")?.id ?? nodes[0].id;
+  const path: string[] = [start];
+  const visited = new Set([start]);
+
+  while (path.length < nodes.length) {
+    const current = path[path.length - 1];
+    const neighbors = adjacency.get(current) ?? [];
+    const next =
+      neighbors.find((n) => !visited.has(n)) ??
+      neighbors.find((n) => n !== path[path.length - 2]) ??
+      neighbors[0];
+    if (!next) break;
+    path.push(next);
+    visited.add(next);
+  }
+
+  return path.length > 1 ? validateFlowPath(path, edges) : nodes.map((n) => n.id);
+}
+
+function useFlowAnimation(path: string[], reduceMotion: boolean, segmentMs = 1400) {
+  const [step, setStep] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (reduceMotion || path.length < 2) return;
+
+    let frame = 0;
+    let segmentStart = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - segmentStart;
+      const t = Math.min(elapsed / segmentMs, 1);
+      setProgress(easeInOutCubic(t));
+
+      if (t >= 1) {
+        setStep((s) => (s + 1) % path.length);
+        segmentStart = now;
+        setProgress(0);
+      }
+
+      frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [path, reduceMotion, segmentMs]);
+
+  const fromId = path[step] ?? path[0];
+  const toId = path[(step + 1) % path.length] ?? path[1];
+
+  return { step, progress, fromId, toId, activeNodeId: fromId };
 }
 
 type NetworkCanvasProps = {
@@ -57,6 +204,7 @@ type NetworkCanvasProps = {
   height?: string;
   nodes?: Node[];
   edges?: Edge[];
+  flowPath?: string[];
   interactive?: boolean;
 };
 
@@ -66,6 +214,7 @@ export function NetworkCanvas({
   height = "min-h-[320px] sm:min-h-[420px]",
   nodes = HERO_NODES,
   edges = HERO_EDGES,
+  flowPath: customFlowPath,
   interactive = true,
 }: NetworkCanvasProps) {
   const uid = useId().replace(/:/g, "");
@@ -73,6 +222,23 @@ export function NetworkCanvas({
   const [size, setSize] = useState({ w: 800, h: 400 });
   const [hovered, setHovered] = useState<string | null>(null);
   const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 });
+
+  const flowPath = useMemo(
+    () => getFlowPath(nodes, edges, customFlowPath),
+    [nodes, edges, customFlowPath],
+  );
+
+  const { progress, fromId, toId, activeNodeId } = useFlowAnimation(
+    flowPath,
+    reduceMotion,
+  );
+
+  const effectiveProgress = reduceMotion ? 0 : progress;
+  const effectiveFromId = reduceMotion ? flowPath[0] : fromId;
+  const effectiveToId = reduceMotion ? flowPath[1] ?? flowPath[0] : toId;
+  const effectiveActiveId = reduceMotion ? flowPath[0] : activeNodeId;
+
+  const focusId = hovered ?? effectiveActiveId;
 
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);
@@ -131,19 +297,36 @@ export function NetworkCanvas({
     [positions],
   );
 
+  const flowEdgeKey = `${effectiveFromId}-${effectiveToId}`;
+  const flowEdgeKeyRev = `${effectiveToId}-${effectiveFromId}`;
+
   const activeEdges = useMemo(() => {
-    if (!hovered) return new Set(edges.map((e) => `${e.from}-${e.to}`));
-    const set = new Set<string>();
-    edges.forEach((e) => {
-      if (e.from === hovered || e.to === hovered) {
-        set.add(`${e.from}-${e.to}`);
-      }
-    });
-    return set;
-  }, [hovered, edges]);
+    if (hovered) {
+      const set = new Set<string>();
+      edges.forEach((e) => {
+        if (e.from === hovered || e.to === hovered) {
+          set.add(`${e.from}-${e.to}`);
+        }
+      });
+      return set;
+    }
+    return new Set([flowEdgeKey]);
+  }, [hovered, edges, flowEdgeKey]);
+
+  const fromPos = posMap[effectiveFromId];
+  const toPos = posMap[effectiveToId];
+  const runnerX =
+    fromPos && toPos
+      ? fromPos.px + (toPos.px - fromPos.px) * effectiveProgress
+      : 0;
+  const runnerY =
+    fromPos && toPos
+      ? fromPos.py + (toPos.py - fromPos.py) * effectiveProgress
+      : 0;
 
   const edgeGradId = `edgeGrad-${uid}`;
   const glowId = `glow-${uid}`;
+  const runnerGradId = `runnerGrad-${uid}`;
 
   return (
     <div
@@ -173,8 +356,13 @@ export function NetworkCanvas({
               <stop offset="50%" stopColor="#A855F7" stopOpacity="0.7" />
               <stop offset="100%" stopColor="#22D3EE" stopOpacity="0.4" />
             </linearGradient>
+            <radialGradient id={runnerGradId}>
+              <stop offset="0%" stopColor="#22D3EE" stopOpacity="1" />
+              <stop offset="50%" stopColor="#8B5CF6" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
+            </radialGradient>
             <filter id={glowId}>
-              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feGaussianBlur stdDeviation="3" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
@@ -187,35 +375,58 @@ export function NetworkCanvas({
             const b = posMap[edge.to];
             if (!a || !b) return null;
             const key = `${edge.from}-${edge.to}`;
-            const active = activeEdges.has(key);
-            const highlighted = !hovered || active;
+            const isFlowEdge =
+              !hovered &&
+              (key === flowEdgeKey || key === flowEdgeKeyRev);
+            const isConnected = hovered
+              ? activeEdges.has(key)
+              : isFlowEdge;
+            const dimmed = hovered ? !isConnected : !isFlowEdge;
+
             return (
-              <g key={key}>
-                <line
-                  x1={a.px}
-                  y1={a.py}
-                  x2={b.px}
-                  y2={b.py}
-                  stroke={`url(#${edgeGradId})`}
-                  strokeWidth={active && hovered ? 2 : 1}
-                  strokeOpacity={highlighted ? (active && hovered ? 0.9 : 0.35) : 0.12}
-                  strokeLinecap="round"
-                  className="transition-[stroke-opacity,stroke-width] duration-100"
-                />
-                {!reduceMotion && (
-                  <SignalPulse
-                    x1={a.px}
-                    y1={a.py}
-                    x2={b.px}
-                    y2={b.py}
-                    delay={(edge.from.charCodeAt(0) + edge.to.charCodeAt(0)) % 5}
-                    emphasized={active && !!hovered}
-                    glowId={glowId}
-                  />
-                )}
-              </g>
+              <line
+                key={key}
+                x1={a.px}
+                y1={a.py}
+                x2={b.px}
+                y2={b.py}
+                stroke={`url(#${edgeGradId})`}
+                strokeWidth={isFlowEdge && !hovered ? 2.2 : isConnected && hovered ? 2 : 1}
+                strokeOpacity={dimmed ? 0.1 : isFlowEdge ? 0.95 : isConnected ? 0.85 : 0.28}
+                strokeLinecap="round"
+                className="transition-[stroke-opacity,stroke-width] duration-200"
+              />
             );
           })}
+
+          {/* Flow trail */}
+          {!reduceMotion && fromPos && toPos && (
+            <>
+              {[0.12, 0.06].map((offset) => {
+                const trailProgress = Math.max(0, effectiveProgress - offset);
+                const tx = fromPos.px + (toPos.px - fromPos.px) * trailProgress;
+                const ty = fromPos.py + (toPos.py - fromPos.py) * trailProgress;
+                return (
+                  <circle
+                    key={offset}
+                    cx={tx}
+                    cy={ty}
+                    r={4 - offset * 20}
+                    fill={`url(#${runnerGradId})`}
+                    opacity={0.5 - offset}
+                  />
+                );
+              })}
+              <circle
+                cx={runnerX}
+                cy={runnerY}
+                r={6}
+                fill="#22D3EE"
+                filter={`url(#${glowId})`}
+              />
+              <circle cx={runnerX} cy={runnerY} r={2.5} fill="#F5F5F5" />
+            </>
+          )}
         </svg>
 
         {positions.map((node) => (
@@ -223,7 +434,8 @@ export function NetworkCanvas({
             key={node.id}
             node={node}
             isHovered={hovered === node.id}
-            isAnyHovered={!!hovered}
+            isFlowActive={!hovered && focusId === node.id}
+            isFlowTarget={!hovered && effectiveToId === node.id}
             reduceMotion={reduceMotion}
             onEnter={() => setHovered(node.id)}
             onLeave={() => setHovered((current) => (current === node.id ? null : current))}
@@ -246,7 +458,11 @@ export function NetworkCanvas({
       )}
 
       <div className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-[#8B5CF6]/30 bg-[#0D0D14]/80 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#A1A1AA]">
-        {interactive ? "Move cursor · Hover nodes" : "Live network"}
+        {reduceMotion
+          ? "Live network"
+          : interactive
+            ? "Signal flowing · Hover nodes"
+            : "Signal flowing"}
       </div>
     </div>
   );
@@ -255,19 +471,22 @@ export function NetworkCanvas({
 function NetworkNode({
   node,
   isHovered,
-  isAnyHovered,
+  isFlowActive,
+  isFlowTarget,
   reduceMotion,
   onEnter,
   onLeave,
 }: {
   node: { id: string; px: number; py: number; label: string; type: "hub" | "node"; pull: number };
   isHovered: boolean;
-  isAnyHovered: boolean;
+  isFlowActive: boolean;
+  isFlowTarget: boolean;
   reduceMotion: boolean;
   onEnter: () => void;
   onLeave: () => void;
 }) {
   const isHub = node.type === "hub";
+  const showLabel = isHovered || isFlowActive;
 
   return (
     <button
@@ -280,86 +499,58 @@ function NetworkNode({
       className="group absolute flex -translate-x-1/2 -translate-y-1/2 cursor-crosshair items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#22D3EE]"
       style={{ left: node.px, top: node.py, width: 44, height: 44 }}
     >
-      {/* Hover ring — instant via CSS */}
       <span
-        className={`absolute rounded-full border transition-all duration-75 ${
-          isHovered
-            ? "h-10 w-10 border-[#22D3EE]/70 bg-[#22D3EE]/10 opacity-100"
-            : "h-6 w-6 border-[#8B5CF6]/0 opacity-0 group-hover:border-[#8B5CF6]/50 group-hover:bg-[#8B5CF6]/10 group-hover:opacity-100"
+        className={`absolute rounded-full border transition-all duration-200 ${
+          isFlowActive
+            ? "h-11 w-11 border-[#22D3EE]/80 bg-[#22D3EE]/15 opacity-100"
+            : isFlowTarget
+              ? "h-8 w-8 border-[#A855F7]/60 bg-[#A855F7]/10 opacity-100"
+              : isHovered
+                ? "h-10 w-10 border-[#22D3EE]/70 bg-[#22D3EE]/10 opacity-100"
+                : "h-6 w-6 border-[#8B5CF6]/0 opacity-0 group-hover:border-[#8B5CF6]/50 group-hover:bg-[#8B5CF6]/10 group-hover:opacity-100"
         }`}
       />
 
-      {/* Glow */}
       <span
-        className={`absolute rounded-full blur-md transition-all duration-75 ${
+        className={`absolute rounded-full blur-md transition-all duration-200 ${
           isHub ? "bg-[#8B5CF6]" : "bg-[#A855F7]"
-        } ${isHovered ? "h-8 w-8 opacity-80" : "h-5 w-5 opacity-40 group-hover:h-6 group-hover:w-6 group-hover:opacity-60"}`}
+        } ${
+          isFlowActive
+            ? "h-9 w-9 opacity-90"
+            : isFlowTarget
+              ? "h-6 w-6 opacity-55"
+              : isHovered
+                ? "h-8 w-8 opacity-80"
+                : "h-5 w-5 opacity-40 group-hover:h-6 group-hover:w-6 group-hover:opacity-60"
+        }`}
       />
 
-      {/* Dot */}
       <span
-        className={`relative rounded-full border shadow-[0_0_20px_rgba(168,85,247,0.9)] transition-transform duration-75 ${
+        className={`relative rounded-full border shadow-[0_0_20px_rgba(168,85,247,0.9)] transition-transform duration-200 ${
           isHub
             ? "h-3.5 w-3.5 border-[#22D3EE]/60 bg-[#8B5CF6]"
             : "h-2.5 w-2.5 border-[#A855F7]/50 bg-[#C4B5FD]"
-        } ${isHovered ? "scale-125" : "group-hover:scale-110"} ${!isAnyHovered && !reduceMotion ? "animate-pulse" : ""}`}
+        } ${isFlowActive ? "scale-150" : isFlowTarget ? "scale-125" : isHovered ? "scale-125" : "group-hover:scale-110"} ${
+          isFlowActive && !reduceMotion ? "animate-pulse" : ""
+        }`}
       />
 
-      {/* Ripple — only when not hovered to reduce noise */}
-      {!reduceMotion && !isAnyHovered && (
-        <span className="absolute h-8 w-8 animate-ping rounded-full border border-[#22D3EE]/25 opacity-30" />
+      {!reduceMotion && isFlowActive && (
+        <span className="absolute h-10 w-10 animate-ping rounded-full border border-[#22D3EE]/50 opacity-40" />
       )}
 
-      {/* Label — always in DOM, instant visibility */}
       <span
-        className={`pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider transition-all duration-75 ${
-          isHovered
+        className={`pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider transition-all duration-150 ${
+          showLabel
             ? "-translate-y-8 border-[#22D3EE]/60 bg-[#0D0D14] text-[#F5F5F5] shadow-[0_0_20px_rgba(34,211,238,0.25)] opacity-100"
-            : "-translate-y-6 border-[#8B5CF6]/30 bg-[#0D0D14]/80 text-[#C4B5FD] opacity-0 group-hover:-translate-y-8 group-hover:border-[#8B5CF6]/50 group-hover:opacity-100"
+            : isFlowTarget
+              ? "-translate-y-7 border-[#A855F7]/40 bg-[#0D0D14]/90 text-[#E9D5FF] opacity-70"
+              : "-translate-y-6 border-[#8B5CF6]/30 bg-[#0D0D14]/80 text-[#C4B5FD] opacity-0 group-hover:-translate-y-8 group-hover:border-[#8B5CF6]/50 group-hover:opacity-100"
         }`}
       >
         {node.label}
       </span>
     </button>
-  );
-}
-
-function SignalPulse({
-  x1,
-  y1,
-  x2,
-  y2,
-  delay,
-  emphasized,
-  glowId,
-}: {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  delay: number;
-  emphasized: boolean;
-  glowId: string;
-}) {
-  return (
-    <motion.circle
-      r={emphasized ? 3 : 2}
-      fill={emphasized ? "#22D3EE" : "#A855F7"}
-      filter={emphasized ? `url(#${glowId})` : undefined}
-      cx={x1}
-      cy={y1}
-      animate={{
-        cx: [x1, x2],
-        cy: [y1, y2],
-        opacity: emphasized ? [0, 1, 1, 0] : [0, 0.45, 0.45, 0],
-      }}
-      transition={{
-        duration: emphasized ? 1.4 : 3.2,
-        repeat: Number.POSITIVE_INFINITY,
-        delay: delay * 0.3,
-        ease: "linear",
-      }}
-    />
   );
 }
 
@@ -377,6 +568,8 @@ export const CHAIN_EDGES: Edge[] = [
   { from: "attention", to: "data" },
   { from: "data", to: "revenue" },
 ];
+
+export { CHAIN_FLOW };
 
 export const OPERATING_NODES: Node[] = [
   { id: "core", x: 0.5, y: 0.5, label: "Clickabily", type: "hub" },
