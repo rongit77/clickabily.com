@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | Clickabily",
   },
   description:
-    "The operating layer behind modern internet businesses: growth systems, media buying, monetization infrastructure, and AI operations.",
+    "Traffic systems, media buying, monetization, and ops for online businesses.",
 };
 
 export default function RootLayout({

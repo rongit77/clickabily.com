@@ -458,11 +458,7 @@ export function NetworkCanvas({
       )}
 
       <div className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-[#8B5CF6]/30 bg-[#0D0D14]/80 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#A1A1AA]">
-        {reduceMotion
-          ? "Live network"
-          : interactive
-            ? "Signal flowing · Hover nodes"
-            : "Signal flowing"}
+        Live network
       </div>
     </div>
   );

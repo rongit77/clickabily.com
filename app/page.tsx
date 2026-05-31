@@ -4,19 +4,18 @@ import ClickabilyHome from "@/app/components/clickabily-home";
 export const metadata: Metadata = {
   title: "Clickabily | Digital Growth Infrastructure",
   description:
-    "Clickabily is a digital infrastructure company building growth systems, media buying engines, monetization layers, affiliate platforms, and AI operations.",
+    "Clickabily builds traffic systems, buys media, runs offers, and ships products online.",
   openGraph: {
     title: "Clickabily | Building What The Internet Runs On",
     description:
-      "Traffic, monetization, infrastructure, and intelligence for the modern digital economy.",
+      "Traffic, monetization, infrastructure, and intelligence.",
     type: "website",
     images: [{ url: "/clickabily-logo.png", width: 582, height: 178, alt: "Clickabily" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Clickabily | Digital Growth Infrastructure",
-    description:
-      "The operating layer behind modern internet businesses.",
+    description: "Traffic, media, monetization, ops.",
     images: ["/clickabily-logo.png"],
   },
 };
@@ -26,7 +25,7 @@ const organizationSchema = {
   "@type": "Organization",
   name: "Clickabily",
   description:
-    "Digital infrastructure company operating across AdTech, media buying, growth systems, affiliate, monetization, AI, and digital products.",
+    "Traffic, media buying, monetization, affiliate, and digital products.",
   url: "https://clickabily.com",
   logo: "https://clickabily.com/clickabily-logo.png",
 };

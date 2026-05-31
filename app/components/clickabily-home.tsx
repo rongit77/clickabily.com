@@ -16,25 +16,25 @@ const buildCards = [
   {
     title: "Growth Systems",
     description:
-      "Acquisition architecture designed for scale, continuity, and measurable velocity.",
+      "Acquisition that runs daily. Paid, organic, and partner channels wired into one stack.",
     icon: "◈",
   },
   {
     title: "Media Buying",
     description:
-      "Signal-driven bidding strategies across paid channels and high-intent traffic sources.",
+      "Buying on real signals across search, social, native, and display.",
     icon: "◎",
   },
   {
     title: "Monetization Infrastructure",
     description:
-      "Revenue layers that convert attention into resilient cashflow across digital assets.",
+      "Offers, funnels, payouts, and revenue tracking in one place.",
     icon: "◉",
   },
   {
     title: "AI Operations",
     description:
-      "Intelligence workflows that automate analysis, optimization, and execution loops.",
+      "Reporting, optimization, and ops work we automate so the team can move faster.",
     icon: "◇",
   },
   {
@@ -46,7 +46,7 @@ const buildCards = [
   {
     title: "Digital Products",
     description:
-      "Future-facing products built on traffic data, user behavior, and market opportunities.",
+      "Products we build, own, and run on our own traffic.",
     icon: "▣",
   },
 ];
@@ -74,7 +74,7 @@ const ventures: Venture[] = [
     tag: "Active",
     type: "internal",
     details:
-      "We continuously monitor ad landscapes, competitor signals, and emerging traffic opportunities across channels. Our intelligence systems surface arbitrage windows, creative angles, and market gaps before they become obvious — giving us a structural edge in media buying and growth.",
+      "We watch ad markets for new angles, offers, and traffic openings. When something moves, we want to see it before everyone else.",
   },
   {
     name: "Affiliate Assets",
@@ -82,31 +82,31 @@ const ventures: Venture[] = [
     tag: "Scaling",
     type: "internal",
     details:
-      "We build and operate publishing properties engineered around high-intent search and discovery. Content architecture, site structure, and monetization layers are designed as interconnected systems — not one-off pages — so each asset compounds traffic and revenue over time.",
+      "Sites built around search intent. Structured to rank, monetize, and grow without rebuilding from scratch every few months.",
   },
   {
     name: "SEO Link Building",
-    description: "Authority infrastructure for organic growth.",
+    description: "Link building for organic growth.",
     tag: "Active",
     type: "internal",
     details:
-      "Strategic link acquisition and authority building for digital assets. We identify relevant placements, negotiate partnerships, and deploy link infrastructure that compounds organic visibility — connecting our properties to the broader web in ways that search engines reward.",
+      "Real placements on real sites. We find the opportunities, close the deals, and build links that hold up over time.",
   },
   {
     name: "Top10 Activity",
-    description: "Comparison and ranking properties at scale.",
+    description: "Comparison and ranking sites.",
     tag: "Scaling",
     type: "internal",
     details:
-      "We operate comparison and top-ranking properties across verticals where users seek curated picks. Built for intent capture, structured monetization, and repeatable content systems — each property is designed to rank, convert, and scale without manual campaign dependency.",
+      "Top 10 and comparison properties in niches where people are already looking to buy or sign up.",
   },
   {
     name: "Future Ventures",
-    description: "Experimental products and monetization models.",
+    description: "New products we test internally.",
     tag: "R&D",
     type: "internal",
     details:
-      "Our internal lab for testing new traffic sources, product formats, and revenue models. Ideas move from hypothesis to live experiment quickly — only what proves signal gets scaled into full ventures.",
+      "Small bets on new traffic sources, offers, and product formats. What works gets scaled. What doesn't gets cut.",
   },
 ];
 
@@ -158,7 +158,7 @@ export default function ClickabilyHome() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22D3EE] opacity-60" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22D3EE]" />
           </span>
-          Digital Infrastructure Company
+          Traffic · Media · Monetization
         </motion.p>
 
         <div className="space-y-8">
@@ -187,8 +187,8 @@ export default function ClickabilyHome() {
               Traffic. Monetization. Infrastructure. Intelligence.
             </span>
             <br />
-            Clickabily builds growth systems, media assets, AI-powered workflows
-            and revenue infrastructure for the modern digital economy.
+            Clickabily builds traffic systems, buys media, runs offers, and ships
+            products online.
           </motion.p>
         </div>
 
@@ -224,13 +224,12 @@ export default function ClickabilyHome() {
 
       <SectionContainer id="click-economy" title="The Click Economy">
         <p className="max-w-3xl text-base leading-relaxed text-[#D4D4D8] sm:text-lg">
-          Every digital business depends on a simple chain:
+          Every click follows the same path.
           <br />
-          Attention becomes intent. Intent becomes action. Action becomes
-          revenue.
+          Attention. Intent. Action. Revenue.
           <br />
           <span className="text-[#E9D5FF]">
-            We build the systems behind that transformation.
+            We build what sits in the middle.
           </span>
         </p>
         <div className="mt-10">
@@ -270,8 +269,8 @@ export default function ClickabilyHome() {
 
       <SectionContainer title="Operating Across The Internet">
         <p className="mb-8 max-w-2xl text-[#D4D4D8]">
-          Nine verticals. One infrastructure layer. Hover any node to trace
-          live connections back to core systems.
+          AdTech, affiliate, search, publishing, e-commerce, and more. Same
+          team, same stack.
         </p>
         <NetworkCanvas
           reduceMotion={!!reduceMotion}
@@ -369,7 +368,7 @@ export default function ClickabilyHome() {
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-6 py-10 sm:flex-row sm:items-center sm:px-8 lg:px-10">
           <Logo size="footer" className="opacity-95" />
           <p className="text-sm text-[#A1A1AA]">
-            The operating layer behind modern internet businesses.
+            Traffic, media, monetization, ops.
           </p>
         </div>
       </footer>
@@ -475,7 +474,7 @@ function VentureModal({
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-[#A855F7]">
-                  Internal operation
+                  What we run
                 </p>
                 <h3
                   id="venture-modal-title"
@@ -496,12 +495,6 @@ function VentureModal({
             <p className="text-base leading-relaxed text-[#D4D4D8]">
               {venture.details}
             </p>
-            <div className="mt-8 rounded-2xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/5 px-5 py-4">
-              <p className="text-sm text-[#E9D5FF]">
-                This is built and operated in-house by Clickabily — not a client
-                showcase.
-              </p>
-            </div>
           </motion.div>
         </motion.div>
       )}
@@ -538,14 +531,6 @@ function SectionContainer({
 }
 
 function OperatingLayer({ reduceMotion }: { reduceMotion: boolean }) {
-  const streams = [
-    { label: "Traffic Pulse", top: "12%", left: "4%" },
-    { label: "Bid Streams", top: "28%", right: "5%" },
-    { label: "Signal Match", top: "52%", left: "2%" },
-    { label: "ROI Layer", top: "72%", right: "8%" },
-    { label: "Node Sync", top: "88%", left: "12%" },
-  ];
-
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(139,92,246,0.18),transparent_40%),radial-gradient(circle_at_80%_25%,rgba(168,85,247,0.1),transparent_45%),radial-gradient(circle_at_50%_85%,rgba(34,211,238,0.08),transparent_50%)]" />
@@ -566,31 +551,6 @@ function OperatingLayer({ reduceMotion }: { reduceMotion: boolean }) {
             }}
           />
         ))}
-
-      {streams.map((item, index) => (
-        <motion.div
-          key={item.label}
-          className="absolute rounded-full border border-[#8B5CF6]/35 bg-[#0F0F15]/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#D4D4D8]"
-          style={{
-            top: item.top,
-            left: item.left,
-            right: item.right,
-          }}
-          animate={
-            reduceMotion
-              ? undefined
-              : { opacity: [0.35, 0.85, 0.35], y: [0, -6, 0] }
-          }
-          transition={{
-            duration: 2.5 + index * 0.35,
-            repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-          }}
-        >
-          <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]" />
-          {item.label}
-        </motion.div>
-      ))}
     </div>
   );
 }
