@@ -1,10 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { CursorGlow } from "@/app/components/cursor-glow";
-import { HeroLogo, SiteHeader } from "@/app/components/site-header";
+import { SiteHeader, Logo } from "@/app/components/site-header";
 import {
   CHAIN_EDGES,
   CHAIN_NODES,
@@ -148,9 +147,7 @@ export default function ClickabilyHome() {
       <CursorGlow reduceMotion={!!reduceMotion} />
       <OperatingLayer reduceMotion={!!reduceMotion} />
 
-      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col justify-center gap-10 px-6 pb-24 pt-32 sm:px-8 lg:px-10">
-        <HeroLogo />
-
+      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col justify-center gap-10 px-6 pb-24 pt-28 sm:px-8 lg:px-10">
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -368,15 +365,9 @@ export default function ClickabilyHome() {
         </div>
       </SectionContainer>
 
-      <footer className="relative z-10 border-t border-[#8B5CF6]/15 bg-[#07070A]/90">
+      <footer className="relative z-10 border-t border-[#8B5CF6]/15">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-6 py-10 sm:flex-row sm:items-center sm:px-8 lg:px-10">
-          <Image
-            src="/clickabily-logo.jpg"
-            alt="Clickabily"
-            width={1024}
-            height={682}
-            className="h-7 w-auto opacity-90"
-          />
+          <Logo size="footer" className="opacity-95" />
           <p className="text-sm text-[#A1A1AA]">
             The operating layer behind modern internet businesses.
           </p>

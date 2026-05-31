@@ -10,14 +10,14 @@ export const metadata: Metadata = {
     description:
       "Traffic, monetization, infrastructure, and intelligence for the modern digital economy.",
     type: "website",
-    images: [{ url: "/clickabily-logo.jpg", width: 1024, height: 682, alt: "Clickabily" }],
+    images: [{ url: "/clickabily-logo.png", width: 582, height: 178, alt: "Clickabily" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Clickabily | Digital Growth Infrastructure",
     description:
       "The operating layer behind modern internet businesses.",
-    images: ["/clickabily-logo.jpg"],
+    images: ["/clickabily-logo.png"],
   },
 };
 
@@ -28,7 +28,7 @@ const organizationSchema = {
   description:
     "Digital infrastructure company operating across AdTech, media buying, growth systems, affiliate, monetization, AI, and digital products.",
   url: "https://clickabily.com",
-  logo: "https://clickabily.com/clickabily-logo.jpg",
+  logo: "https://clickabily.com/clickabily-logo.png",
 };
 
 export default function Home() {

@@ -8,6 +8,30 @@ const navLinks = [
   { label: "Contact", href: "#contact" },
 ];
 
+type LogoProps = {
+  size?: "header" | "footer";
+  priority?: boolean;
+  className?: string;
+};
+
+export function Logo({ size = "header", priority = false, className = "" }: LogoProps) {
+  const sizeClass =
+    size === "header"
+      ? "h-11 w-auto drop-shadow-[0_0_18px_rgba(139,92,246,0.35)] sm:h-12 lg:h-14"
+      : "h-9 w-auto opacity-90 sm:h-10";
+
+  return (
+    <Image
+      src="/clickabily-logo.png"
+      alt="Clickabily"
+      width={582}
+      height={178}
+      priority={priority}
+      className={`${sizeClass} ${className}`.trim()}
+    />
+  );
+}
+
 export function SiteHeader() {
   const reduceMotion = useReducedMotion();
 
@@ -16,18 +40,15 @@ export function SiteHeader() {
       initial={reduceMotion ? undefined : { opacity: 0, y: -12 }}
       animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed inset-x-0 top-0 z-50 border-b border-[#8B5CF6]/15 bg-[#07070A]/75 backdrop-blur-xl"
+      className="fixed inset-x-0 top-0 z-50 border-b border-[#8B5CF6]/15 bg-[#07070A]/80 backdrop-blur-xl"
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4 sm:px-8 lg:px-10">
-        <a href="#" className="group relative shrink-0">
-          <Image
-            src="/clickabily-logo.jpg"
-            alt="Clickabily"
-            width={1024}
-            height={682}
-            priority
-            className="h-8 w-auto transition-opacity duration-200 group-hover:opacity-90 sm:h-9"
-          />
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-3.5 sm:px-8 sm:py-4 lg:px-10">
+        <a
+          href="#"
+          className="group relative shrink-0 transition-transform duration-200 hover:scale-[1.02]"
+        >
+          <span className="pointer-events-none absolute -inset-3 rounded-2xl bg-[radial-gradient(circle,rgba(139,92,246,0.18),transparent_70%)] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+          <Logo size="header" priority />
         </a>
 
         <nav className="flex items-center gap-2 sm:gap-4">
@@ -49,28 +70,5 @@ export function SiteHeader() {
         </nav>
       </div>
     </motion.header>
-  );
-}
-
-export function HeroLogo() {
-  const reduceMotion = useReducedMotion();
-
-  return (
-    <motion.div
-      initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
-      animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-      transition={{ duration: 0.7 }}
-      className="relative w-fit"
-    >
-      <div className="pointer-events-none absolute -inset-8 bg-[radial-gradient(circle,rgba(139,92,246,0.22),transparent_70%)]" />
-      <Image
-        src="/clickabily-logo.jpg"
-        alt="Clickabily"
-        width={1024}
-        height={682}
-        priority
-        className="relative h-14 w-auto sm:h-16 lg:h-20"
-      />
-    </motion.div>
   );
 }
