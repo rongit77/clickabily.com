@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 type Node = {
   id: string;
@@ -68,6 +68,7 @@ export function NetworkCanvas({
   edges = HERO_EDGES,
   interactive = true,
 }: NetworkCanvasProps) {
+  const uid = useId().replace(/:/g, "");
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 400 });
   const [hovered, setHovered] = useState<string | null>(null);
@@ -75,10 +76,10 @@ export function NetworkCanvas({
 
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);
-  const springX = useSpring(mouseX, { stiffness: 40, damping: 20 });
-  const springY = useSpring(mouseY, { stiffness: 40, damping: 20 });
-  const parallaxX = useTransform(springX, [0, 1], [-12, 12]);
-  const parallaxY = useTransform(springY, [0, 1], [-8, 8]);
+  const springX = useSpring(mouseX, { stiffness: 80, damping: 26 });
+  const springY = useSpring(mouseY, { stiffness: 80, damping: 26 });
+  const parallaxX = useTransform(springX, [0, 1], [-8, 8]);
+  const parallaxY = useTransform(springY, [0, 1], [-5, 5]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -110,11 +111,11 @@ export function NetworkCanvas({
     return nodes.map((node) => {
       const baseX = node.x * size.w;
       const baseY = node.y * size.h;
-      if (reduceMotion || !interactive) {
+      if (reduceMotion || !interactive || hovered) {
         return { ...node, px: baseX, py: baseY, pull: 0 };
       }
       const d = dist(mouse.x, mouse.y, node.x, node.y);
-      const pull = Math.max(0, 1 - d * 2.2) * 18;
+      const pull = Math.max(0, 1 - d * 2.4) * 10;
       const angle = Math.atan2(node.y - mouse.y, node.x - mouse.x);
       return {
         ...node,
@@ -123,7 +124,7 @@ export function NetworkCanvas({
         pull,
       };
     });
-  }, [nodes, size, mouse, reduceMotion, interactive]);
+  }, [nodes, size, mouse, hovered, reduceMotion, interactive]);
 
   const posMap = useMemo(
     () => Object.fromEntries(positions.map((p) => [p.id, p])),
@@ -141,12 +142,16 @@ export function NetworkCanvas({
     return set;
   }, [hovered, edges]);
 
+  const edgeGradId = `edgeGrad-${uid}`;
+  const glowId = `glow-${uid}`;
+
   return (
     <div
       ref={containerRef}
       onMouseMove={handleMove}
       onMouseLeave={() => {
         setHovered(null);
+        setMouse({ x: 0.5, y: 0.5 });
         mouseX.set(0.5);
         mouseY.set(0.5);
       }}
@@ -163,12 +168,12 @@ export function NetworkCanvas({
           aria-hidden
         >
           <defs>
-            <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient id={edgeGradId} x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.2" />
               <stop offset="50%" stopColor="#A855F7" stopOpacity="0.7" />
               <stop offset="100%" stopColor="#22D3EE" stopOpacity="0.4" />
             </linearGradient>
-            <filter id="glow">
+            <filter id={glowId}>
               <feGaussianBlur stdDeviation="2" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
@@ -183,6 +188,7 @@ export function NetworkCanvas({
             if (!a || !b) return null;
             const key = `${edge.from}-${edge.to}`;
             const active = activeEdges.has(key);
+            const highlighted = !hovered || active;
             return (
               <g key={key}>
                 <line
@@ -190,10 +196,11 @@ export function NetworkCanvas({
                   y1={a.py}
                   x2={b.px}
                   y2={b.py}
-                  stroke="url(#edgeGrad)"
-                  strokeWidth={active ? 1.8 : 1}
-                  strokeOpacity={active ? 0.85 : hovered ? 0.15 : 0.35}
+                  stroke={`url(#${edgeGradId})`}
+                  strokeWidth={active && hovered ? 2 : 1}
+                  strokeOpacity={highlighted ? (active && hovered ? 0.9 : 0.35) : 0.12}
                   strokeLinecap="round"
+                  className="transition-[stroke-opacity,stroke-width] duration-100"
                 />
                 {!reduceMotion && (
                   <SignalPulse
@@ -202,7 +209,8 @@ export function NetworkCanvas({
                     x2={b.px}
                     y2={b.py}
                     delay={(edge.from.charCodeAt(0) + edge.to.charCodeAt(0)) % 5}
-                    active={active}
+                    emphasized={active && !!hovered}
+                    glowId={glowId}
                   />
                 )}
               </g>
@@ -210,70 +218,17 @@ export function NetworkCanvas({
           })}
         </svg>
 
-        {positions.map((node) => {
-          const isHub = node.type === "hub";
-          const isHovered = hovered === node.id;
-          const radius = isHub ? 7 : 5;
-          return (
-            <motion.button
-              key={node.id}
-              type="button"
-              aria-label={node.label}
-              onMouseEnter={() => setHovered(node.id)}
-              onFocus={() => setHovered(node.id)}
-              onBlur={() => setHovered(null)}
-              className="absolute -translate-x-1/2 -translate-y-1/2 cursor-crosshair focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#22D3EE]"
-              style={{ left: node.px, top: node.py }}
-              animate={
-                reduceMotion
-                  ? undefined
-                  : {
-                      scale: isHovered ? 1.35 : 1,
-                    }
-              }
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              <span
-                className={`absolute inset-0 rounded-full blur-md ${
-                  isHub ? "bg-[#8B5CF6]" : "bg-[#A855F7]"
-                }`}
-                style={{
-                  opacity: isHovered ? 0.7 : 0.3 + node.pull * 0.02,
-                  transform: `scale(${isHovered ? 2.2 : 1.6})`,
-                }}
-              />
-              <span
-                className={`relative block rounded-full border ${
-                  isHub
-                    ? "h-3.5 w-3.5 border-[#22D3EE]/60 bg-[#8B5CF6]"
-                    : "h-2.5 w-2.5 border-[#A855F7]/50 bg-[#C4B5FD]"
-                } shadow-[0_0_20px_rgba(168,85,247,0.9)]`}
-              />
-              {!reduceMotion && (
-                <motion.span
-                  className="absolute left-1/2 top-1/2 block rounded-full border border-[#22D3EE]/40"
-                  style={{ width: radius * 4, height: radius * 4, x: "-50%", y: "-50%" }}
-                  animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Number.POSITIVE_INFINITY,
-                    delay: node.x * 3,
-                  }}
-                />
-              )}
-              <motion.span
-                initial={false}
-                animate={{
-                  opacity: isHovered ? 1 : 0,
-                  y: isHovered ? -28 : -20,
-                }}
-                className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#8B5CF6]/40 bg-[#0D0D14]/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#E9D5FF]"
-              >
-                {node.label}
-              </motion.span>
-            </motion.button>
-          );
-        })}
+        {positions.map((node) => (
+          <NetworkNode
+            key={node.id}
+            node={node}
+            isHovered={hovered === node.id}
+            isAnyHovered={!!hovered}
+            reduceMotion={reduceMotion}
+            onEnter={() => setHovered(node.id)}
+            onLeave={() => setHovered((current) => (current === node.id ? null : current))}
+          />
+        ))}
       </motion.div>
 
       {!reduceMotion && (
@@ -297,37 +252,111 @@ export function NetworkCanvas({
   );
 }
 
+function NetworkNode({
+  node,
+  isHovered,
+  isAnyHovered,
+  reduceMotion,
+  onEnter,
+  onLeave,
+}: {
+  node: { id: string; px: number; py: number; label: string; type: "hub" | "node"; pull: number };
+  isHovered: boolean;
+  isAnyHovered: boolean;
+  reduceMotion: boolean;
+  onEnter: () => void;
+  onLeave: () => void;
+}) {
+  const isHub = node.type === "hub";
+
+  return (
+    <button
+      type="button"
+      aria-label={node.label}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onFocus={onEnter}
+      onBlur={onLeave}
+      className="group absolute flex -translate-x-1/2 -translate-y-1/2 cursor-crosshair items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#22D3EE]"
+      style={{ left: node.px, top: node.py, width: 44, height: 44 }}
+    >
+      {/* Hover ring — instant via CSS */}
+      <span
+        className={`absolute rounded-full border transition-all duration-75 ${
+          isHovered
+            ? "h-10 w-10 border-[#22D3EE]/70 bg-[#22D3EE]/10 opacity-100"
+            : "h-6 w-6 border-[#8B5CF6]/0 opacity-0 group-hover:border-[#8B5CF6]/50 group-hover:bg-[#8B5CF6]/10 group-hover:opacity-100"
+        }`}
+      />
+
+      {/* Glow */}
+      <span
+        className={`absolute rounded-full blur-md transition-all duration-75 ${
+          isHub ? "bg-[#8B5CF6]" : "bg-[#A855F7]"
+        } ${isHovered ? "h-8 w-8 opacity-80" : "h-5 w-5 opacity-40 group-hover:h-6 group-hover:w-6 group-hover:opacity-60"}`}
+      />
+
+      {/* Dot */}
+      <span
+        className={`relative rounded-full border shadow-[0_0_20px_rgba(168,85,247,0.9)] transition-transform duration-75 ${
+          isHub
+            ? "h-3.5 w-3.5 border-[#22D3EE]/60 bg-[#8B5CF6]"
+            : "h-2.5 w-2.5 border-[#A855F7]/50 bg-[#C4B5FD]"
+        } ${isHovered ? "scale-125" : "group-hover:scale-110"} ${!isAnyHovered && !reduceMotion ? "animate-pulse" : ""}`}
+      />
+
+      {/* Ripple — only when not hovered to reduce noise */}
+      {!reduceMotion && !isAnyHovered && (
+        <span className="absolute h-8 w-8 animate-ping rounded-full border border-[#22D3EE]/25 opacity-30" />
+      )}
+
+      {/* Label — always in DOM, instant visibility */}
+      <span
+        className={`pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider transition-all duration-75 ${
+          isHovered
+            ? "-translate-y-8 border-[#22D3EE]/60 bg-[#0D0D14] text-[#F5F5F5] shadow-[0_0_20px_rgba(34,211,238,0.25)] opacity-100"
+            : "-translate-y-6 border-[#8B5CF6]/30 bg-[#0D0D14]/80 text-[#C4B5FD] opacity-0 group-hover:-translate-y-8 group-hover:border-[#8B5CF6]/50 group-hover:opacity-100"
+        }`}
+      >
+        {node.label}
+      </span>
+    </button>
+  );
+}
+
 function SignalPulse({
   x1,
   y1,
   x2,
   y2,
   delay,
-  active,
+  emphasized,
+  glowId,
 }: {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
   delay: number;
-  active: boolean;
+  emphasized: boolean;
+  glowId: string;
 }) {
   return (
     <motion.circle
-      r={active ? 3.5 : 2.5}
-      fill={active ? "#22D3EE" : "#A855F7"}
-      filter="url(#glow)"
+      r={emphasized ? 3 : 2}
+      fill={emphasized ? "#22D3EE" : "#A855F7"}
+      filter={emphasized ? `url(#${glowId})` : undefined}
       cx={x1}
       cy={y1}
       animate={{
         cx: [x1, x2],
         cy: [y1, y2],
-        opacity: [0, 1, 1, 0],
+        opacity: emphasized ? [0, 1, 1, 0] : [0, 0.45, 0.45, 0],
       }}
       transition={{
-        duration: active ? 1.8 : 2.8,
+        duration: emphasized ? 1.4 : 3.2,
         repeat: Number.POSITIVE_INFINITY,
-        delay: delay * 0.4,
+        delay: delay * 0.3,
         ease: "linear",
       }}
     />
