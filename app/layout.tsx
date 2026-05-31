@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://clickabily.com"),
   title: {
     default: "Clickabily",
     template: "%s | Clickabily",
