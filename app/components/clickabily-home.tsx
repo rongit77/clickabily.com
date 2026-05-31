@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useCallback, useEffect, useState } from "react";
 import { CursorGlow } from "@/app/components/cursor-glow";
 import {
   CHAIN_EDGES,
@@ -49,26 +50,62 @@ const buildCards = [
   },
 ];
 
-const ventures = [
+type Venture = {
+  name: string;
+  description: string;
+  tag: string;
+  type: "external" | "internal";
+  href?: string;
+  details?: string;
+};
+
+const ventures: Venture[] = [
   {
     name: "Betinga",
     description: "Social prediction platform.",
     tag: "Live",
+    type: "external",
+    href: "https://betinga.com",
   },
   {
     name: "Ad Intelligence",
     description: "Market scanning and opportunity discovery.",
     tag: "Active",
+    type: "internal",
+    details:
+      "We continuously monitor ad landscapes, competitor signals, and emerging traffic opportunities across channels. Our intelligence systems surface arbitrage windows, creative angles, and market gaps before they become obvious — giving us a structural edge in media buying and growth.",
   },
   {
     name: "Affiliate Assets",
     description: "Intent-based publishing systems.",
     tag: "Scaling",
+    type: "internal",
+    details:
+      "We build and operate publishing properties engineered around high-intent search and discovery. Content architecture, site structure, and monetization layers are designed as interconnected systems — not one-off pages — so each asset compounds traffic and revenue over time.",
+  },
+  {
+    name: "SEO Link Building",
+    description: "Authority infrastructure for organic growth.",
+    tag: "Active",
+    type: "internal",
+    details:
+      "Strategic link acquisition and authority building for digital assets. We identify relevant placements, negotiate partnerships, and deploy link infrastructure that compounds organic visibility — connecting our properties to the broader web in ways that search engines reward.",
+  },
+  {
+    name: "Top10 Activity",
+    description: "Comparison and ranking properties at scale.",
+    tag: "Scaling",
+    type: "internal",
+    details:
+      "We operate comparison and top-ranking properties across verticals where users seek curated picks. Built for intent capture, structured monetization, and repeatable content systems — each property is designed to rank, convert, and scale without manual campaign dependency.",
   },
   {
     name: "Future Ventures",
     description: "Experimental products and monetization models.",
     tag: "R&D",
+    type: "internal",
+    details:
+      "Our internal lab for testing new traffic sources, product formats, and revenue models. Ideas move from hypothesis to live experiment quickly — only what proves signal gets scaled into full ventures.",
   },
 ];
 
@@ -84,6 +121,24 @@ const principles = [
 
 export default function ClickabilyHome() {
   const reduceMotion = useReducedMotion();
+  const [activeVenture, setActiveVenture] = useState<Venture | null>(null);
+
+  const closeVenture = useCallback(() => setActiveVenture(null), []);
+
+  useEffect(() => {
+    if (!activeVenture) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeVenture();
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [activeVenture, closeVenture]);
 
   return (
     <main className="relative overflow-hidden bg-[#07070A] text-[#F5F5F5]">
@@ -225,37 +280,19 @@ export default function ClickabilyHome() {
       </SectionContainer>
 
       <SectionContainer id="selected-ventures" title="Selected Ventures">
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {ventures.map((venture, index) => (
-            <motion.article
+            <VentureCard
               key={venture.name}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.45, delay: index * 0.08 }}
-              whileHover={{ y: -6 }}
-              className="group relative overflow-hidden rounded-3xl border border-[#8B5CF6]/30 bg-gradient-to-br from-[#13131B] via-[#0D0D14] to-[#09090E] p-7 transition-all duration-300 hover:border-[#22D3EE]/40 hover:shadow-[0_8px_40px_rgba(139,92,246,0.12)]"
-            >
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#8B5CF6] to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-              <div className="flex items-start justify-between gap-4">
-                <h3 className="text-2xl font-semibold text-[#F5F5F5]">
-                  {venture.name}
-                </h3>
-                <span className="shrink-0 rounded-full border border-[#22D3EE]/40 bg-[#22D3EE]/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#22D3EE]">
-                  {venture.tag}
-                </span>
-              </div>
-              <p className="mt-3 text-base text-[#D4D4D8]">
-                {venture.description}
-              </p>
-              <div className="mt-6 flex items-center gap-2 text-xs uppercase tracking-[0.15em] text-[#8B5CF6] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <span className="h-px flex-1 bg-gradient-to-r from-[#8B5CF6] to-transparent" />
-                View venture
-              </div>
-            </motion.article>
+              venture={venture}
+              index={index}
+              onOpen={() => setActiveVenture(venture)}
+            />
           ))}
         </div>
       </SectionContainer>
+
+      <VentureModal venture={activeVenture} onClose={closeVenture} />
 
       <SectionContainer title="How We Think">
         <div className="space-y-1">
@@ -326,6 +363,138 @@ export default function ClickabilyHome() {
         </div>
       </SectionContainer>
     </main>
+  );
+}
+
+function VentureCard({
+  venture,
+  index,
+  onOpen,
+}: {
+  venture: Venture;
+  index: number;
+  onOpen: () => void;
+}) {
+  const cardClass =
+    "group relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-[#8B5CF6]/30 bg-gradient-to-br from-[#13131B] via-[#0D0D14] to-[#09090E] p-7 text-left transition-all duration-300 hover:border-[#22D3EE]/40 hover:shadow-[0_8px_40px_rgba(139,92,246,0.12)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22D3EE]";
+
+  const content = (
+    <>
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#8B5CF6] to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+      <div className="flex items-start justify-between gap-4">
+        <h3 className="text-2xl font-semibold text-[#F5F5F5]">{venture.name}</h3>
+        <span className="shrink-0 rounded-full border border-[#22D3EE]/40 bg-[#22D3EE]/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#22D3EE]">
+          {venture.tag}
+        </span>
+      </div>
+      <p className="mt-3 flex-1 text-base text-[#D4D4D8]">{venture.description}</p>
+      <div className="mt-6 flex items-center gap-2 text-xs uppercase tracking-[0.15em] text-[#8B5CF6]">
+        <span className="h-px flex-1 bg-gradient-to-r from-[#8B5CF6] to-transparent" />
+        {venture.type === "external" && venture.href ? (
+          <span className="transition-colors group-hover:text-[#22D3EE]">
+            Visit {new URL(venture.href).hostname.replace(/^www\./, "")} →
+          </span>
+        ) : (
+          <span className="transition-colors group-hover:text-[#22D3EE]">
+            What we do →
+          </span>
+        )}
+      </div>
+    </>
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.45, delay: index * 0.08 }}
+      whileHover={{ y: -6 }}
+    >
+      {venture.type === "external" && venture.href ? (
+        <a
+          href={venture.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cardClass}
+        >
+          {content}
+        </a>
+      ) : (
+        <button type="button" onClick={onOpen} className={cardClass}>
+          {content}
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
+function VentureModal({
+  venture,
+  onClose,
+}: {
+  venture: Venture | null;
+  onClose: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {venture && venture.type === "internal" && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          aria-modal
+          role="dialog"
+          aria-labelledby="venture-modal-title"
+        >
+          <button
+            type="button"
+            aria-label="Close"
+            className="absolute inset-0 bg-[#07070A]/80 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            className="relative max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[#8B5CF6]/40 bg-gradient-to-br from-[#13131B] via-[#0D0D14] to-[#09090E] p-8 shadow-[0_0_80px_rgba(139,92,246,0.2)]"
+          >
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-[#A855F7]">
+                  Internal operation
+                </p>
+                <h3
+                  id="venture-modal-title"
+                  className="mt-2 text-3xl font-semibold text-[#F5F5F5]"
+                >
+                  {venture.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#8B5CF6]/40 text-[#D4D4D8] transition-colors hover:border-[#22D3EE] hover:text-[#22D3EE]"
+                aria-label="Close dialog"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-base leading-relaxed text-[#D4D4D8]">
+              {venture.details}
+            </p>
+            <div className="mt-8 rounded-2xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/5 px-5 py-4">
+              <p className="text-sm text-[#E9D5FF]">
+                This is built and operated in-house by Clickabily — not a client
+                showcase.
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
